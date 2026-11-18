@@ -58,13 +58,20 @@ export default function Workspace() {
   // Initial load
   useEffect(() => {
     (async () => {
-      const docs = await fetchDocuments();
-      if (docs.length > 0) {
-        const targetId = urlDocId || docs[0]._id;
-        loadDocument(targetId);
-        if (!urlDocId) {
-          navigate(`/doc/${targetId}`, { replace: true });
+      try {
+        const docs = await fetchDocuments();
+        if (docs && docs.length > 0) {
+          const targetId = urlDocId || docs[0]._id;
+          await loadDocument(targetId);
+          if (!urlDocId) {
+            navigate(`/doc/${targetId}`, { replace: true });
+          }
+        } else {
+          setIsLoading(false);
         }
+      } catch (err) {
+        console.error("Initialization error:", err);
+        setIsLoading(false);
       }
     })();
   }, [fetchDocuments, loadDocument, urlDocId, navigate]);
