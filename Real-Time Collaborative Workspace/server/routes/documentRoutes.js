@@ -13,3 +13,4 @@ router.route("/").get(getAllDocuments).post(createDocument);
 router.route("/:id").get(getDocumentById).put(updateDocument).delete(deleteDocument);
 
 export default router;
+

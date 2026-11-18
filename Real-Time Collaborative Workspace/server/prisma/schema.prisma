@@ -1,0 +1,32 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Document {
+  id             String    @id @default(uuid())
+  title          String    @default("Untitled Document")
+  icon           String    @default("📄")
+  mode           String    @default("document")
+  blocks         Json      // Native PostgreSQL JSONB for Notion blocks
+  canvasElements Json      // Native PostgreSQL JSONB for Figma canvas elements
+  lastModifiedBy String    @default("Krish")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  comments       Comment[]
+}
+
+model Comment {
+  id         String   @id @default(uuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  author     String
+  color      String   @default("#6366f1")
+  text       String
+  createdAt  DateTime @default(now())
+}
+

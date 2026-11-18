@@ -12,19 +12,50 @@ SyncFlow is a high-performance, real-time collaborative workspace bridging the g
 
 ---
 
-## 🛠️ Tech Stack & Architecture
+## 🛠️ Official Nexvia Tech Stack & Architecture
 
 ### Backend:
 - **Runtime:** Node.js + Express.js (ES Modules)
+- **Database:** PostgreSQL 18
+- **ORM:** Prisma 6 (`@prisma/client`) with native PostgreSQL `JSONB` for block trees & canvas elements
+- **Validation:** Zod
 - **Real-Time Engine:** Socket.io v4 with room partitioning (`doc:<docId>`)
-- **Database:** MongoDB Atlas (Mongoose ODM)
-- **Deployment Port:** `5001` (Isolated from LMS)
+- **Port:** `5001` (Isolated from LMS)
 
 ### Frontend:
 - **Framework:** React 19 + Vite 6
 - **Styling:** Tailwind CSS v4 + Plus Jakarta Sans + JetBrains Mono
 - **Icons:** Lucide React
 - **Client Networking:** Socket.io Client + Axios
+
+---
+
+## 🐘 PostgreSQL + Prisma Schema Specification
+
+```prisma
+model Document {
+  id             String    @id @default(uuid())
+  title          String    @default("Untitled Document")
+  icon           String    @default("📄")
+  mode           String    @default("document") // "document" or "canvas"
+  blocks         Json      // Native PostgreSQL JSONB for Notion blocks
+  canvasElements Json      // Native PostgreSQL JSONB for Figma canvas elements
+  lastModifiedBy String    @default("Krish")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  comments       Comment[]
+}
+
+model Comment {
+  id         String   @id @default(uuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  author     String
+  color      String   @default("#6366f1")
+  text       String
+  createdAt  DateTime @default(now())
+}
+```
 
 ---
 
@@ -47,21 +78,27 @@ Client (Tab A) ──[send-comment]─────────> Server (Socket.i
 | `block-change` | Client ➔ Server | `{ id, content, checked, type }` | Real-time Notion block synchronizer |
 | `canvas-element-change` | Client ➔ Server | `{ id, x, y, text, color }` | Real-time Figma sticky card movement & text sync |
 | `document-meta-change` | Client ➔ Server | `{ title, mode }` | Real-time rename & view toggle broadcast |
-| `send-comment` | Client ➔ Server | `{ text, docId }` | Document inline discussion thread |
+| `send-comment` | Client ➔ Server | `{ text, docId }` | Document inline discussion thread (stored in PostgreSQL) |
 
 ---
 
 ## 🚀 Running Locally
 
-### 1. Backend Server
+### 1. Database Setup
+```bash
+bash setup_db.sh
+```
+
+### 2. Backend Server
 ```bash
 cd "Real-Time Collaborative Workspace/server"
 npm install
+npx prisma db push
 npm run dev
 # Server runs on http://localhost:5001
 ```
 
-### 2. Frontend Client
+### 3. Frontend Client
 ```bash
 cd "Real-Time Collaborative Workspace/client"
 npm install
@@ -77,5 +114,6 @@ npm run dev
 3. **Dual Working Modes:**
    - **Doc View:** Notion-style block editor (Headings, Paragraphs, To-Do checklists, Code blocks, Callouts, Dividers).
    - **Canvas Board:** Figma-style drag-and-drop sticky cards with custom color palettes.
-4. **Auto-Save & Cloud Persistence:** Debounced MongoDB Atlas synchronization with real-time saving state indicators.
-5. **Live Discussion Drawer:** Document-specific real-time comments thread.
+4. **Export to Markdown:** Instant 1-click download of document formatted as `.md` file.
+5. **Auto-Save & PostgreSQL Persistence:** Debounced PostgreSQL Atlas/local synchronization with real-time saving state indicators.
+6. **Live Discussion Drawer:** Document-specific real-time comments thread stored in PostgreSQL relational schema.

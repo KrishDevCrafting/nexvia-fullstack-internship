@@ -218,3 +218,4 @@ export default function CanvasBoard({ elements, onElementsChange, docId }) {
     </div>
   );
 }
+

@@ -5,15 +5,12 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import connectDB from "./config/db.js";
+import prisma from "./config/prisma.js";
 import documentRoutes from "./routes/documentRoutes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, ".env") });
-
-// Connect to MongoDB Atlas
-connectDB();
 
 const app = express();
 const server = http.createServer(app);
@@ -33,8 +30,17 @@ app.use(express.json());
 app.use("/api/documents", documentRoutes);
 
 // Health check endpoint
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok", service: "SyncFlow Real-Time Workspace Server" });
+app.get("/health", async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({
+      status: "ok",
+      database: "PostgreSQL (Prisma Connected)",
+      service: "SyncFlow Real-Time Workspace Server",
+    });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message });
+  }
 });
 
 // Socket.io Setup
@@ -72,8 +78,6 @@ io.on("connection", (socket) => {
     roomUsers.get(currentRoom).set(socket.id, currentUser);
 
     const activeList = Array.from(roomUsers.get(currentRoom).values());
-
-    // Broadcast updated presence to all users in this document room
     io.to(currentRoom).emit("presence-update", activeList);
     console.log(`👤 ${currentUser.name} joined room ${currentRoom} (Active: ${activeList.length})`);
   });
@@ -81,7 +85,6 @@ io.on("connection", (socket) => {
   // 2. Real-Time Multi-User Live Cursor (Figma style)
   socket.on("cursor-move", (coords) => {
     if (!currentRoom) return;
-    // Broadcast cursor position to all OTHER users in room
     socket.to(currentRoom).emit("cursor-update", {
       socketId: socket.id,
       user: currentUser,
@@ -120,17 +123,30 @@ io.on("connection", (socket) => {
     socket.to(currentRoom).emit("document-meta-update", payload);
   });
 
-  // 8. Document Live Comments / Discussion
-  socket.on("send-comment", (comment) => {
+  // 8. Document Live Comments (Persisted to PostgreSQL Comment table)
+  socket.on("send-comment", async (comment) => {
     if (!currentRoom) return;
-    const enrichedComment = {
-      ...comment,
-      id: `c-${Date.now()}`,
-      author: currentUser?.name || "Anonymous",
-      color: currentUser?.color || "#6366f1",
-      timestamp: new Date().toISOString(),
-    };
-    io.to(currentRoom).emit("new-comment", enrichedComment);
+    try {
+      const savedComment = await prisma.comment.create({
+        data: {
+          documentId: comment.docId,
+          author: currentUser?.name || "Anonymous",
+          color: currentUser?.color || "#6366f1",
+          text: comment.text,
+        },
+      });
+      io.to(currentRoom).emit("new-comment", savedComment);
+    } catch (err) {
+      console.error("Failed to save comment:", err);
+      // Fallback in-memory broadcast
+      io.to(currentRoom).emit("new-comment", {
+        id: `c-${Date.now()}`,
+        author: currentUser?.name || "Anonymous",
+        color: currentUser?.color || "#6366f1",
+        text: comment.text,
+        createdAt: new Date().toISOString(),
+      });
+    }
   });
 
   // 9. Disconnect cleanup
@@ -151,5 +167,5 @@ io.on("connection", (socket) => {
 
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
-  console.log(`🚀 SyncFlow Collab Server running on port ${PORT}`);
+  console.log(`🚀 SyncFlow Collab Server running on port ${PORT} [Database: PostgreSQL (Prisma)]`);
 });

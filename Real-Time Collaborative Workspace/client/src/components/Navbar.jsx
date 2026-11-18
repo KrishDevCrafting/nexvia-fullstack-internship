@@ -10,6 +10,7 @@ import {
   Users,
   Copy,
   ChevronDown,
+  Download,
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 
@@ -26,6 +27,7 @@ export default function Navbar({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(documentData?.title || "Untitled Document");
   const [copied, setCopied] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [tempName, setTempName] = useState(currentUser.name);
 
@@ -46,6 +48,36 @@ export default function Navbar({
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Convert blocks to Markdown and download file
+  const handleExportMarkdown = () => {
+    if (!documentData) return;
+    let md = `# ${documentData.title || "Untitled"}\n\n`;
+
+    if (documentData.blocks && Array.isArray(documentData.blocks)) {
+      documentData.blocks.forEach((b) => {
+        if (b.type === "h1") md += `# ${b.content}\n\n`;
+        else if (b.type === "h2") md += `## ${b.content}\n\n`;
+        else if (b.type === "h3") md += `### ${b.content}\n\n`;
+        else if (b.type === "paragraph") md += `${b.content}\n\n`;
+        else if (b.type === "todo") md += `- [${b.checked ? "x" : " "}] ${b.content}\n`;
+        else if (b.type === "callout") md += `> 💡 ${b.content}\n\n`;
+        else if (b.type === "code") md += "```" + (b.language || "js") + "\n" + b.content + "\n```\n\n";
+        else if (b.type === "divider") md += `---\n\n`;
+      });
+    }
+
+    const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(documentData.title || "document").replace(/\s+/g, "_")}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    setDownloaded(true);
+    setTimeout(() => setDownloaded(false), 2000);
   };
 
   const saveUserIdentity = () => {
@@ -170,6 +202,25 @@ export default function Navbar({
           )}
         </button>
 
+        {/* Export Markdown Button */}
+        <button
+          onClick={handleExportMarkdown}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-100 transition border border-zinc-700"
+          title="Export as Markdown (.md)"
+        >
+          {downloaded ? (
+            <>
+              <Check className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-emerald-400">Exported!</span>
+            </>
+          ) : (
+            <>
+              <Download className="w-3.5 h-3.5 text-zinc-400" />
+              <span>Export .md</span>
+            </>
+          )}
+        </button>
+
         {/* Share Button */}
         <button
           onClick={handleShare}
@@ -268,3 +319,4 @@ export default function Navbar({
     </header>
   );
 }
+

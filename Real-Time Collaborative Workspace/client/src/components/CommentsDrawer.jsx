@@ -107,3 +107,4 @@ export default function CommentsDrawer({ isOpen, onClose, docId, onCommentsCount
     </aside>
   );
 }
+

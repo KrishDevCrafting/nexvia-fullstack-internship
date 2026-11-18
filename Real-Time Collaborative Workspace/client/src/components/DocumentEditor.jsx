@@ -340,3 +340,4 @@ export default function DocumentEditor({ blocks, onBlocksChange, docId }) {
     </div>
   );
 }
+
