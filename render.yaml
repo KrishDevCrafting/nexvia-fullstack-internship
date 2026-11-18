@@ -1,0 +1,43 @@
+services:
+  # 1. SyncFlow Collaborative Workspace Backend (FS-02)
+  - type: web
+    name: syncflow-collab-server
+    env: node
+    plan: free
+    rootDir: Real-Time Collaborative Workspace/server
+    buildCommand: npm install && npx prisma db push
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: syncflow-postgres
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+
+  # 2. EduConnect LMS Backend (FS-03)
+  - type: web
+    name: educonnect-lms-server
+    env: node
+    plan: free
+    rootDir: Learning Management System with Live Classes/educonnect-lms/server
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+
+databases:
+  # Managed Cloud PostgreSQL for FS-02
+  - name: syncflow-postgres
+    plan: free
+    databaseName: collab_workspace
+    user: postgres

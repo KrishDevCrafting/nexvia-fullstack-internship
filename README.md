@@ -179,3 +179,4 @@ npm run dev
 
 ## 📄 License & Attribution
 Developed and submitted for the **Nexvia Technologies Full-Stack Internship (Batch of 2026)**. All rights reserved by Krish.
+
