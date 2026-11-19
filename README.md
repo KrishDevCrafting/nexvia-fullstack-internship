@@ -13,6 +13,8 @@
 This repository represents the official, production-grade deliverables for the **Nexvia Technologies Full-Stack Engineering Internship**. It consolidates two end-to-end full-stack applications engineered with rigorous modularity, high-throughput WebSockets, robust databases, and zero-compromise security:
 
 🔗 **Live Production Deployments:**  
+- **FS-03 (EduConnect LMS Client):** [https://learning-management-system-with-liv.vercel.app/](https://learning-management-system-with-liv.vercel.app/)  
+- **FS-03 (EduConnect LMS Backend API):** [https://learning-management-system-with-live-x2a7.onrender.com](https://learning-management-system-with-live-x2a7.onrender.com)  
 - **FS-02 (SyncFlow Workspace Client):** [https://nexvia-fullstack-internship-client.vercel.app/](https://nexvia-fullstack-internship-client.vercel.app/)  
 - **FS-02 (SyncFlow Backend API):** [https://nexvia-fullstack-internship.onrender.com](https://nexvia-fullstack-internship.onrender.com)  
 - **Official GitHub Repository:** [https://github.com/KrishDevCrafting/nexvia-fullstack-internship](https://github.com/KrishDevCrafting/nexvia-fullstack-internship)  
